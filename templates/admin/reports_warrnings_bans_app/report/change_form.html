@@ -1,0 +1,20 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+{% block submit_buttons_bottom %}
+
+    <div class="submit-row" style="margin-top: 20px">
+        {% if not original.archieved %}
+            <input type="submit" name="_archievie" value="Nothing/Archeive" class="default" style="background-color:cornflowerblue">
+            <input type="submit" name="_ban" value="Ban" class="default" style="background-color:cornflowerblue">
+            <input type="submit" name="_warrning" value="Warrning" class="default" style="background-color:cornflowerblue">
+        {% else %}
+             <input type="submit" name="_dearchievie" value="de-Archeive" class="default" style="background-color:cornflowerblue">
+        {% endif %}
+    </div>
+
+{% endblock %}
+
+{% block after_related_objects  %}
+    <span style="margin: 5px; padding: 5px">Reported object content: "{{ original.related_object.get_content }}"</span>
+{% endblock %}
+

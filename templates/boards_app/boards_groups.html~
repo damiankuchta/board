@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load can_user_view_it %}
+
+{% block title %}
+    Boards
+{% endblock %}
+
+
+{#todo can user add posts (topics)#}
+{#todo can user reply for topics#}
+
+{#todo old board settings stays as defual on editing#}
+
+{# todo icon of each board to be displayed#}
+
+{% block content %}
+    <div>
+    {% for board_group in board_groups %}
+        {% include "show_boards.html" with parent=board_group user=request.user %}
+      {% endfor %}
+
+    </div>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% autoescape off %}
+    Hi {{ user }} <br>
+    Please click into your activation link:
+
+    {# todo change to https  #}
+    <a href="http://{{ domain }}{% url "activate_account" user token %}">Activate your account</a>
+{% endautoescape %}

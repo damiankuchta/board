@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load can_user_view_it %}
+
+{% block title %}
+    Boards
+{% endblock %}
+
+
+{% block content %}
+    <div>
+    {% for board_group in board_groups %}
+        {% include "show_boards.html" with parent=board_group user=request.user %}
+      {% endfor %}
+
+    </div>
+{% endblock %}

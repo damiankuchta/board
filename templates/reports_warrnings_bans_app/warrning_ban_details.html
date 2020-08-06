@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {{ details.get_self_class_name }}
+    <div class="card">
+        <div>User: {{ details.user }}</div>
+        <div>Related to: <a href="{{details.related_object.get_absolute_url}}">{{ details.related_object }}</a></div>
+    {% if details.get_expiry_date %}
+        <div>Expiry Date:{{details.get_expiry_date}}</div>
+    {% endif %}
+    </div>
+
+
+{% endblock %}

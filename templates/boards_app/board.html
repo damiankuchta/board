@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load can_user_add_new_topics %}
+{% load hitcount_tags %}
+
+{% block title %}
+    {{ board.name }}E
+{% endblock %}
+
+
+
+{% block content %}
+
+
+    <span><a href="{% url "index" %}">Index</a> / </span>
+    {% for parent in board.get_all_parents %}
+        {% if forloop.last %}
+            <span>{{ parent.name }}</span>
+        {% else %}
+            <span><a href="{{ parent.get_absolute_url }}">{{ parent.name }}</a> / </span>
+        {% endif %}
+    {% endfor %}
+
+
+
+    <div class="d-flex flex-row ">
+        <div class="m-5 w-75 px-1">
+
+            {# boards #}
+            {% if board.child.all %}
+                <h2>Sub-boards:</h2>
+                {% include "show_boards.html" with parent=board user=request.user %}
+            {% endif %}
+
+            {# Topics #}
+            {% if board.topics.all %}
+                <h2>Topics:</h2>
+                <div class="card d-flex flex-row justify-content-end px-5">
+                    <span >Posts:</span>
+                    <span class="px-5 mx-5">Last:</span>
+                    <span>Views</span>
+                </div>
+                {% for topic in board.topics.all %}
+                    {% if topic.is_topic_visible %}
+                        <div class="d-flex flex-row card w-100 p-3 my-2">
+                            <span class="w-100">
+                               <a href="{{ topic.get_absolute_url }}">{{ topic.title }}</a> <br>
+                                <span>Pages: </span>
+                                {% for page in topic.get_last_ten_pages %}
+                                    <a href="{% url "topic" topic_id=topic.id %}?page={{ page }}">{{page}}</a>
+                                {% endfor %}
+                            </span>
+                            <span class="d-flex flex-row flex-shrink-0">
+                                <span class="px-5 mx-3">{{ topic.get_amount_of_posts }}</span>
+                                <span class="d-flex flex-column justify-content-center">
+                                    <span>{{ topic.get_last_post_datetime }}</span>
+                                    <span>{{ topic.get_last_posted_user }}</span>
+                                </span>
+                                <span class="px-5 mx-3">{% get_hit_count for topic %}</span>
+                            </span>
+                        </div>
+                     {% endif %}
+                {% endfor %}
+            {% endif %}
+
+        </div>
+
+
+        {# add new topic button #}
+        <div class="w-25 m-5 px-5">
+            {% can_user_add_new_topics request.user board as result %}
+            {% if result %}
+                <a class="btn btn-success mx-5" href="{{ board.add_new_topic_url }}">Add new topic</a>
+            {% else %}
+                <a class="btn btn-success mx-5 disabled" disabled >Add new topic</a>
+            {% endif %}
+        </div>
+
+    </div>
+{% endblock %}

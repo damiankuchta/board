@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Profile: {{ profile.username }}
+{% endblock %}
+
+
+{% block content %}
+    <div class="card h-100">
+        <span>Warrnings Count: {{ profile.get_warrnings_count }}</span>
+        <span>Bans Count: {{ profile.get_bans_count }}</span>
+        <span> Posts Count: {{ profile.get_posts_count }} </span>
+        <span> Topics Count: {{ profile.get_topics_count }}</span>
+    </div>
+
+
+{#        todo friends #}
+{#        todo messages #}
+
+
+{% endblock %}
