@@ -31,11 +31,9 @@ class BoardAdminForm(forms.ModelForm):
     def get_model_choices(self):
         objetcs = chain(Board.objects.all(),  BoardGroup.objects.all() )
         choices = []
-
         for object in objetcs:
-            if self.instance == object:
-                continue
-            choices.append(self.return_model_choice(object))
+            if not self.instance == object:
+                choices.append(self.return_model_choice(object))
         return choices
 
     def __init__(self, *args, **kwargs):
@@ -44,33 +42,24 @@ class BoardAdminForm(forms.ModelForm):
         self.fields['get_parent'].choices = self.get_model_choices()
 
 
-        if instance:
-            if instance.parent:
-                self.fields['get_parent'].initial = self.return_model_choice(instance.parent)
+        try:
+            self.fields['get_parent'].initial = self.return_model_choice(instance.parent)
+            """if parent exisst do not allow lower restrictions settings than its parents"""
+            for field in ["visibility", "add_new_topics_restrictions", "add_new_posts_restictions"]:
+                chosed = getattr(self.instance.parent, field)
+                new_choices = []
 
-                # todo test it
-                """if parent exisst do not allow lower restrictions settings than its parents"""
-                for field in ["visibility", "add_new_topics_restrictions", "add_new_posts_restictions"]:
-                    chosed = getattr(self.instance.parent, field)
-                    new_choices = []
+                for choice in self.instance.parent.restriction_choices:
+                    if choice[0] <= int(chosed):
+                        new_choices.append(choice)
 
-                    for choice in self.instance.parent.restriction_choices:
-                        if choice[0] <= int(chosed):
-                            new_choices.append(choice)
+                self.fields[field].choices = new_choices
 
-                    self.fields[field].choices = new_choices
-
-                #todo test it
-                """if parent exisst do not allow groups that are not picked in the parent """
-                for field in ["visibility_groups", "new_topics_groups", "new_posts_groups"]:
-                    self.fields[field] = forms.ModelMultipleChoiceField(queryset=getattr(instance.parent, field),
-                                                                        required=False)
-
-
-
-
-        else:
-            #todo test it
+            """if parent exisst do not allow groups that are not picked in the parent """
+            for field in ["visibility_groups", "new_topics_groups", "new_posts_groups"]:
+                self.fields[field] = forms.ModelMultipleChoiceField(queryset=getattr(instance.parent, field),
+                                                                    required=False)
+        except AttributeError:
             """change help text if object does not exists yet and disable changes to fields as admin doesen't know 
             what groups/restriction choices object will be allowed to take"""
             for field in [ 'visibility', 'add_new_topics_restrictions', 'add_new_posts_restictions',
@@ -80,9 +69,10 @@ class BoardAdminForm(forms.ModelForm):
 
 
     def save(self, commit=True):
-        #change instance.parent to object from get_parent field
-        #todo test it
+        # change instance.parent to object from get_parent field
         data = self.cleaned_data['get_parent'].split(" ")
+
+        # get_parent field, split it into the id and object type and then use it to get the right model
         self.instance.parent = getattr(modules[__name__], data[1]).objects.get(id= data[0])
         return super().save(commit)
 
