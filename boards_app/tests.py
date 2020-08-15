@@ -39,8 +39,8 @@ class TestBoard(testcases.TestCase):
         for x, group in enumerate(self.board_group.child.all().order_by("position")):
             self.boards.append(group)
 
-        self.board_group_child = self.board_group.child.first()
-        self.board_group_grand_child = self.board_group_child.child.first()
+        self.child_board = self.board_group.child.first()
+        self.child_board_sub = self.child_board.child.first()
 
     # todo
     def test_view_func(self):
@@ -53,18 +53,18 @@ class TestBoard(testcases.TestCase):
     def test_remove_groups_from_parent(self):
         def assert_that_all_groups_are_in_restricion_group(resitricion_group):
             self.assertTrue(all(item in self.groups for item in getattr(self.board_group, resitricion_group).all()))
-            self.assertTrue(all(item in self.groups for item in getattr(self.board_group_child, resitricion_group).all()))
-            self.assertTrue(all(item in self.groups for item in getattr(self.board_group_grand_child, resitricion_group).all()))
+            self.assertTrue(all(item in self.groups for item in getattr(self.child_board, resitricion_group).all()))
+            self.assertTrue(all(item in self.groups for item in getattr(self.child_board_sub, resitricion_group).all()))
 
         def assert_that_deleted_group_is_not_in_resitriction_group(resitricion_group, deleted_group):
             self.assertFalse(deleted_group in getattr(self.board_group, resitricion_group).all())
-            self.assertFalse(deleted_group in getattr(self.board_group_child, resitricion_group).all())
-            self.assertFalse(deleted_group in getattr(self.board_group_grand_child, resitricion_group).all())
+            self.assertFalse(deleted_group in getattr(self.child_board, resitricion_group).all())
+            self.assertFalse(deleted_group in getattr(self.child_board_sub, resitricion_group).all())
 
         def assert_that_remaing_groups_are_stil_in_resitricion_groups(resitricion_group, remaming_groups):
             self.assertTrue(all(item in remaming_groups for item in getattr(self.board_group, resitricion_group).all()))
-            self.assertTrue(all(item in remaming_groups for item in getattr(self.board_group_child, resitricion_group).all()))
-            self.assertTrue(all(item in remaming_groups for item in getattr(self.board_group_grand_child, resitricion_group).all()))
+            self.assertTrue(all(item in remaming_groups for item in getattr(self.child_board, resitricion_group).all()))
+            self.assertTrue(all(item in remaming_groups for item in getattr(self.child_board_sub, resitricion_group).all()))
 
         def remove_group_from_restriction_grups(restriction_group, group):
             getattr(self.board_group, resitricion_group).remove(group)
@@ -97,8 +97,8 @@ class TestBoard(testcases.TestCase):
             remove_all_groups_from_resitrction_group(self.board_group, resitricion_group)
 
             assert_restriction_group_does_not_have_any_groups(self.board_group, resitricion_group)
-            assert_restriction_group_still_contains_given_group(self.board_group_child, resitricion_group)
-            assert_restriction_group_still_contains_given_group(self.board_group_grand_child, resitricion_group)
+            assert_restriction_group_still_contains_given_group(self.child_board, resitricion_group)
+            assert_restriction_group_still_contains_given_group(self.child_board_sub, resitricion_group)
 
     # should delete all groups from its child except group [0]
     def test_parent_groups_are_null_then_set_it_to_group_zero(self):
@@ -110,13 +110,13 @@ class TestBoard(testcases.TestCase):
 
         def assert_group_stil_in_restriction_groups(group, restriction_group):
             self.assertTrue(group in getattr(self.board_group, restriction_group).all())
-            self.assertTrue(group in getattr(self.board_group_child, restriction_group).all())
-            self.assertTrue(group in getattr(self.board_group_grand_child, restriction_group).all())
+            self.assertTrue(group in getattr(self.child_board, restriction_group).all())
+            self.assertTrue(group in getattr(self.child_board_sub, restriction_group).all())
 
         def assert_group_not_in_restriction_groups(group, restriction_group):
             self.assertFalse(group in getattr(self.board_group, restriction_group).all())
-            self.assertFalse(group in getattr(self.board_group_child, restriction_group).all())
-            self.assertFalse(group in getattr(self.board_group_grand_child, restriction_group).all())
+            self.assertFalse(group in getattr(self.child_board, restriction_group).all())
+            self.assertFalse(group in getattr(self.child_board_sub, restriction_group).all())
 
         for resitricion_group in self.RESTRICTION_GROUPS:
 
@@ -141,17 +141,17 @@ class TestBoard(testcases.TestCase):
             remove_all_groups_from_resitrction_group(self.board_group, resitricion_group)
 
             set_restriction_groups_to_given_group(self.board_group, resitricion_group, self.groups[0])
-            add_group_to_resitrcion_group(self.board_group_child, resitricion_group, self.groups[1])
+            add_group_to_resitrcion_group(self.child_board, resitricion_group, self.groups[1])
 
             # assert that group 0 and its children contains group 0
             self.assertTrue(self.groups[0] in getattr(self.board_group, resitricion_group).all())
-            self.assertTrue(self.groups[0] in getattr(self.board_group_child, resitricion_group).all())
-            self.assertTrue(self.groups[0] in getattr(self.board_group_grand_child, resitricion_group).all())
+            self.assertTrue(self.groups[0] in getattr(self.child_board, resitricion_group).all())
+            self.assertTrue(self.groups[0] in getattr(self.child_board_sub, resitricion_group).all())
 
             # assert that group 1 is not in any groups even though it was added to child
             self.assertFalse(self.groups[1] in getattr(self.board_group, resitricion_group).all())
-            self.assertFalse(self.groups[1] in getattr(self.board_group_child, resitricion_group).all())
-            self.assertFalse(self.groups[1] in getattr(self.board_group_grand_child, resitricion_group).all())
+            self.assertFalse(self.groups[1] in getattr(self.child_board, resitricion_group).all())
+            self.assertFalse(self.groups[1] in getattr(self.child_board_sub, resitricion_group).all())
 
     def test_position_is_changed_to_none(self):
         def change_position_to_none(board):
@@ -244,29 +244,213 @@ class TestBoardGroupView(testcases.TestCase):
 
         GroupsFactory.create_batch(4)
         self.board_group = BoardsGroupsFactory.create_batch(2)
+        self.user = UserFactory(is_active=True)
+        self.groups = Group.objects.all()
         self.client = Client()
 
-
-        self.groups = Group.objects.all()
-
-        self.user = UserFactory(is_active=True)
         self.RESTRICTION_GROUPS = ["visibility_groups", "new_topics_groups", "new_posts_groups"]
-
         for restriction_group in self.RESTRICTION_GROUPS:
             getattr(self.board_group[0], restriction_group).set(self.groups)
 
+    def test_rstriction_set_to_all(self):
+        self.board_group[0].visibility = models.BaseBoardClass.RestrictionChoices['ALL']
+        self.board_group[0].save()
 
-    def test_is_view_context_contains_that_board_groups_that_dont_have_permission(self):
-        self.groups[0].user_set.add(self.user)
-        self.groups[0].save()
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}), follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertTrue(self.board_group[0] in board_groups)
 
         self.client.force_login(self.user)
         response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}), follow=True)
-
-        print(response.context['user'])
         board_groups = response.context['board_groups']
-        self.assertTrue(self.board_group[0] in board_groups)
-        self.assertFalse(self.board_group[1] in board_groups)
+        self.assertTrue(self.user.is_authenticated)
 
+        self.assertTrue(self.board_group[0] in board_groups)
+
+
+    def test_restriction_set_to_Registered(self):
+        self.board_group[0].visibility = models.BaseBoardClass.RestrictionChoices['REGISTERED']
+        self.board_group[0].save()
+
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}), follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertFalse(self.board_group[0] in board_groups)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}), follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertTrue(self.user.is_authenticated)
+        self.assertTrue(self.board_group[0] in board_groups)
+
+    def test_restriction_set_to_Selected(self):
+        self.board_group[0].visibility = models.BaseBoardClass.RestrictionChoices['SELECTED']
+        self.board_group[0].save()
+
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}), follow=True)
+        board_groups = response.context['board_groups']
+        self.assertFalse(self.board_group[0] in board_groups)
+
+        self.groups[0].user_set.add(self.user)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}), follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertTrue(self.board_group[0] in board_groups)
+
+
+    def test_restriction_set_to_Admin(self):
+        self.board_group[0].visibility = models.BaseBoardClass.RestrictionChoices['ADMINS']
+        self.board_group[0].save()
+
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}), follow=True)
+        board_groups = response.context['board_groups']
+        self.assertFalse(self.board_group[0] in board_groups)
+
+        self.groups[0].user_set.add(self.user)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}), follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertFalse(self.board_group[0] in board_groups)
+
+        self.user.is_staff = True
+        self.user.save()
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}), follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertTrue(self.board_group[0] in board_groups)
+
+    def test_restriction_set_to_useruser(self):
+        self.board_group[0].visibility = models.BaseBoardClass.RestrictionChoices['SUPERUSERS']
+
+        self.board_group[0].save()
+
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}),
+                                   follow=True)
+        board_groups = response.context['board_groups']
+        self.assertFalse(self.board_group[0] in board_groups)
+
+        self.groups[0].user_set.add(self.user)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}),
+                                   follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertFalse(self.board_group[0] in board_groups)
+
+        self.user.is_staff = True
+        self.user.save()
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}),
+                                   follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertFalse(self.board_group[0] in board_groups)
+
+        self.user.is_superuser = True
+        self.user.save()
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}),
+                                   follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertTrue(self.board_group[0] in board_groups)
+
+    def test_restriction_set_to_None(self):
+        self.board_group[0].visibility = models.BaseBoardClass.RestrictionChoices['NONE']
+
+        self.board_group[0].save()
+
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}),
+                                   follow=True)
+        board_groups = response.context['board_groups']
+        self.assertFalse(self.board_group[0] in board_groups)
+
+        self.groups[0].user_set.add(self.user)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}),
+                                   follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertFalse(self.board_group[0] in board_groups)
+
+        self.user.is_staff = True
+        self.user.save()
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}),
+                                   follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertFalse(self.board_group[0] in board_groups)
+
+        self.user.is_superuser = True
+        self.user.save()
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}),
+                                   follow=True)
+        board_groups = response.context['board_groups']
+
+        self.assertFalse(self.board_group[0] in board_groups)
+
+
+    def test_index(self):
+        self.board_group[0].visibility = models.BaseBoardClass.RestrictionChoices['ALL']
+        self.board_group[0].save()
+        self.board_group[1].visibility = models.BaseBoardClass.RestrictionChoices['ALL']
+        self.board_group[1].save()
+
+        response = self.client.get(reverse("index"), follow=True)
+        board_groups = response.context['board_groups']
+        self.assertTrue(self.board_group[1] in board_groups)
+        self.assertTrue(self.board_group[0] in board_groups)
+
+        self.board_group[1].visibility = models.BaseBoardClass.RestrictionChoices['NONE']
+        self.board_group[1].save()
+
+        response = self.client.get(reverse("index"), follow=True)
+        board_groups = response.context['board_groups']
+        self.assertFalse(self.board_group[1] in board_groups)
+        self.assertTrue(self.board_group[0] in board_groups)
+
+class TestBoardsView(testcases.TestCase):
+    def setUp(self) -> None:
+        GroupsFactory.create_batch(4)
+        self.board_group = BoardsGroupsFactory.create_batch(2)
+        self.user = UserFactory(is_active=True)
+
+        self.client = Client()
+        self.client.force_login(self.user)
+
+        self.groups = Group.objects.all()
+        self.board = self.board_group[0].child.first()
+
+        self.RESTRICTION_GROUPS = ["visibility_groups", "new_topics_groups", "new_posts_groups"]
+        for restriction_group in self.RESTRICTION_GROUPS:
+            getattr(self.board, restriction_group).set(self.groups)
+
+    def test_can_user_view_board_that_is_not_allowed(self):
+        response = self.client.get(reverse("board", kwargs={'board_id': self.board.id}),
+                                  follow=True)
+        self.assertRedirects(response, reverse("index"))
+
+    def test_can_user_view_board_that_is_allowed(self):
+        self.board.visibility = models.BaseBoardClass.RestrictionChoices['ALL']
+        self.board.save()
+        response = self.client.get(reverse("board", kwargs={'board_id': self.board.id}),
+                                   follow=True)
+        self.assertEqual(response.status_code, 200)
 
     # manage.py test boards_app.tests.TestBoardGroupView --settings=boards_project.settings.test

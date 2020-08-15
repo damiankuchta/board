@@ -2,52 +2,33 @@ from enum import Enum
 import factory
 
 from . import models
-
-RestrictionChoices = {
-    "ALL": 5,
-    "REGISTERED": 4,
-    "SELECTED": 3,
-    "ADMINS": 2,
-    "SUPERUSERS": 1,
-    "NONE": 0,
-}
-
-
 #todo test is not working afte generic relationship change
 
 class BaseBoardsFactory(factory.DjangoModelFactory):
     class Meta:
         abstract = True
-
-class BoardsFactory(factory.DjangoModelFactory):
-    class Meta():
-        model = models.Board
+    visibility = models.BaseBoardClass.RestrictionChoices['SELECTED']
     name = factory.Faker("name")
 
     @factory.post_generation
     def fix_positions(self, create, extracted):
         self.fix_positions()
 
-class BoardsFactoryWithSubBoard(factory.DjangoModelFactory):
+class BoardsFactory(BaseBoardsFactory):
     class Meta():
         model = models.Board
-    name = factory.Faker("name")
+
+
+class BoardsFactoryWithSubBoard(BaseBoardsFactory):
+    class Meta():
+        model = models.Board
     child = factory.RelatedFactoryList(factory=BoardsFactory, factory_related_name="parent", size=4)
 
-    @factory.post_generation
-    def fix_positions(self, create, extracted):
-        self.fix_positions()
 
 class BoardsGroupsFactory(factory.DjangoModelFactory):
     class Meta():
         model = models.BoardGroup
-    name = factory.Faker("name")
     child = factory.RelatedFactoryList(factory=BoardsFactoryWithSubBoard, factory_related_name="parent", size=4)
-    visibility = RestrictionChoices['REGISTERED']
-
-    @factory.post_generation
-    def fix_positions(self, create, extracted):
-        self.fix_positions()
 
 
 class BoardsFactoryPositionNone(BaseBoardsFactory):
@@ -55,16 +36,9 @@ class BoardsFactoryPositionNone(BaseBoardsFactory):
         model = models.Board
     position = None
 
-    @factory.post_generation
-    def fix_positions(self, create, extracted):
-        self.fix_positions()
 
 class BoardsGroupsFactoryBoardsPositionSetToNone(BaseBoardsFactory):
     class Meta():
         model = models.BoardGroup
     position = None
     child = factory.RelatedFactoryList(factory=BoardsFactoryPositionNone, factory_related_name="parent", size=4)
-
-    @factory.post_generation
-    def fix_positions(self, create, extracted):
-        self.fix_positions()
