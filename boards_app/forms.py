@@ -19,6 +19,13 @@ class BoardAdminForm(forms.ModelForm):
     # choices are set in __init__
     get_parent = forms.TypedChoiceField(choices=(None, None))
 
+    def return_model_choice(self, object):
+        return  ("{object_id} {object_type}".format(object_id=object.id,
+                                                               object_type=object.__class__.__name__),
+
+                            "{type} | {name}".format(type=object.__class__.__name__,
+                                                             name=object.name))
+
     #todo test it
     """ get choices for get_parent"""
     def get_model_choices(self):
@@ -28,11 +35,7 @@ class BoardAdminForm(forms.ModelForm):
         for object in objetcs:
             if self.instance == object:
                 continue
-            choices.append(("{object_id} {object_type}".format(object_id=object.id,
-                                                               object_type=object.__class__.__name__),
-
-                            "{type} | {name}".format(type=object.__class__.__name__,
-                                                             name=object.name)))
+            choices.append(self.return_model_choice(object))
         return choices
 
     def __init__(self, *args, **kwargs):
@@ -42,14 +45,16 @@ class BoardAdminForm(forms.ModelForm):
 
 
         if instance:
-            if self.instance.parent:
+            if instance.parent:
+                self.fields['get_parent'].initial = self.return_model_choice(instance.parent)
+
                 # todo test it
                 """if parent exisst do not allow lower restrictions settings than its parents"""
                 for field in ["visibility", "add_new_topics_restrictions", "add_new_posts_restictions"]:
                     chosed = getattr(self.instance.parent, field)
                     new_choices = []
 
-                    for choice in self.instance.parent.choices:
+                    for choice in self.instance.parent.restriction_choices:
                         if choice[0] <= int(chosed):
                             new_choices.append(choice)
 
@@ -60,6 +65,7 @@ class BoardAdminForm(forms.ModelForm):
                 for field in ["visibility_groups", "new_topics_groups", "new_posts_groups"]:
                     self.fields[field] = forms.ModelMultipleChoiceField(queryset=getattr(instance.parent, field),
                                                                         required=False)
+
 
 
 

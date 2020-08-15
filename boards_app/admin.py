@@ -20,3 +20,5 @@ class Board(admin.ModelAdmin):
     form = forms.BoardAdminForm
     list_display = ( "name", "position", "parent", )
 
+
+

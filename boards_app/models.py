@@ -1,3 +1,5 @@
+from enum import Enum
+
 from django.db import models
 from django.shortcuts import reverse
 from django.contrib.auth.models import Group
@@ -14,55 +16,57 @@ class BaseBoardClass(models.Model):
         abstract = True
         ordering = ['position']
 
-    ALL = 5
-    REGISTERED = 4
-    SELECTED = 3
-    ADMINS = 2
-    SUPERUSERS = 1
-    NONE = 0
+    class RestrictionChoices(models.IntegerChoices):
+        ALL = 5
+        REGISTERED = 4
+        SELECTED = 3
+        ADMINS = 2
+        SUPERUSERS = 1
+        NONE = 0
 
-    choices = [ (ALL, 'All'),
-                (REGISTERED, 'Registered'),
-                (SELECTED, 'Selected Groups'),
-                (ADMINS, 'Admins'),
-                (SUPERUSERS, 'Superusers'),
-                (NONE, 'None'),]
+    restriction_choices = [(RestrictionChoices.ALL, 'All'),
+                           (RestrictionChoices.REGISTERED, 'Registered'),
+                           (RestrictionChoices.SELECTED, 'Selected Groups'),
+                           (RestrictionChoices.ADMINS, 'Admins'),
+                           (RestrictionChoices.SUPERUSERS, 'Superusers'),
+                           (RestrictionChoices.NONE, 'None')]
 
     name = models.CharField(max_length=64)
     description = models.CharField(max_length=248, blank=True, null=True)
     position = models.SmallIntegerField(blank=True)
     parent = None
 
+    visibility = models.IntegerField(choices=restriction_choices,
+                                     default=RestrictionChoices.ALL,
+                                     help_text="Lowest user group to be able to see Group/Board")
 
-    # ---------------------------------------------------------------------------------------------------------
-
-    visibility = models.IntegerField(choices=choices, default=ALL,
-                                  help_text="Lowest user group to be able to see Group/Board")
-
-    visibility_groups = models.ManyToManyField(Group,  related_name="%(class)s_can_view_group", blank=True,
+    visibility_groups = models.ManyToManyField(Group,
+                                               related_name="%(class)s_can_view_group",
+                                               blank=True,
                                                help_text="if visibility is set to 'Selected groups' set the groups")
 
-    # ---------------------------------------------------------------------------------------------------------
+    add_new_topics_restrictions = models.IntegerField(default=RestrictionChoices.REGISTERED,
+                                                      choices=restriction_choices,
+                                                      help_text="Lowest user group to be able to add new topics")
 
-    add_new_topics_restrictions = models.IntegerField(default=REGISTERED,  choices=choices,
-                                                   help_text="Lowest user group to be able to add new topics")
-
-    new_topics_groups = models.ManyToManyField(Group, related_name="%(class)s_can_add_new_topics", blank=True,
+    new_topics_groups = models.ManyToManyField(Group, related_name="%(class)s_can_add_new_topics",
+                                               blank=True,
                                                help_text="if new topics restricions is set "
                                                          "to 'Selected groups' set the groups")
 
-    # ---------------------------------------------------------------------------------------------------------
+    add_new_posts_restictions = models.IntegerField(default=RestrictionChoices.REGISTERED,
+                                                    choices=restriction_choices,
+                                                    help_text="Lowest user group to be able to add new posts")
 
-    add_new_posts_restictions = models.IntegerField(default=REGISTERED, choices=choices,
-                                                 help_text="Lowest user group to be able to add new posts")
-
-    new_posts_groups = models.ManyToManyField(Group, related_name="%(class)s_can_add_new_posts", blank=True,
+    new_posts_groups = models.ManyToManyField(Group, related_name="%(class)s_can_add_new_posts",
+                                              blank=True,
                                               help_text="if new post restricions is set "
                                                         "to 'Selected groups' set the groups")
 
-    # ---------------------------------------------------------------------------------------------------------
-
     def __str__(self):
+        return self.name
+
+    def __repr__(self):
         return self.name
 
     def save(self, force_insert=False, force_update=False, using=None,
@@ -70,128 +74,63 @@ class BaseBoardClass(models.Model):
         self.__update_m2m_restricted_grouos_on_parent_change()
         super(BaseBoardClass, self).save(force_insert, force_update, using, update_fields)
 
-    #used in template tag
-    #todo test it!!
-    def is_user_restricted(self, user, act):
+    def can_user_add_new_topics(self, user):
+        return self.__is_user_restricted(user=user, restriction_option=self.add_new_topics_restrictions)
 
-        action = None
-        group = None
+    def can_user_view_it(self, user):
+        return self.__is_user_restricted(user=user, restriction_option=self.visibility)
 
-        if act == "post":
-            action = self.add_new_posts_restictions
-            group = self.new_posts_groups
-        elif act == "topic":
-            action = self.add_new_topics_restrictions
-            group = self.new_topics_groups
-        elif act == "visibility":
-            action = self.visibility
-            group = self.visibility_groups
-        else:
+    def can_user_add_new_posts(self, user):
+        return self.__is_user_restricted(user=user, restriction_option=self.add_new_posts_restictions)
+
+    def __is_user_restricted(self, user, restriction_option):
+        def get_resitricted_groups(restriction_option):
+            if restriction_option == self.add_new_posts_restictions:
+                return self.new_posts_groups
+            elif restriction_option == self.add_new_topics_restrictions:
+                return self.new_topics_groups
+            elif restriction_option == self.visibility:
+                return self.visibility_groups
+
+        def is_user_group_in_restricted_group(user, restricted_groups):
+            for group in user.groups.all():
+                if group in restricted_groups:
+                    return True
             return False
 
-        # all
-        if action == self.ALL:
+        if restriction_option == self.RestrictionChoices.ALL:
             return True
 
-        # none
-        elif action == self.NONE:
+        elif restriction_option == self.RestrictionChoices.NONE:
             return False
 
-        # registered
-        elif action == self.REGISTERED:
+        elif restriction_option == self.RestrictionChoices.REGISTERED:
             if user.is_authenticated:
                 return True
             else:
                 return False
 
-        # selected
-        elif action == self.SELECTED:
-            if user.is_staff or user.is_superuser:
-                return True
-            for g in user.groups.all():
-                if g in group:
-                    return True
-            return False
+        elif restriction_option == self.RestrictionChoices.SELECTED:
+            restriced_groups = get_resitricted_groups(restriction_option=restriction_option)
+            return is_user_group_in_restricted_group(user=user, restricted_groups=restriced_groups.all())
 
-        # admins
-        elif action == self.ADMINS:
+        elif restriction_option == self.RestrictionChoices.ADMINS:
             if user.is_staff or user.is_superuser:
                 return True
             return False
 
-        #superuser
-        elif action == self.SUPERUSERS:
+        elif restriction_option == self.RestrictionChoices.SUPERUSERS:
             if user.is_superuser:
                 return True
-            return False
-
-    """ 
-        USED IN SIGNAL PRE_SAVE
-        on saves checks if position/parent was changed if it was it updates positions of other
-        siblings to make sure all positions are in proper sequence
-    """
-    @staticmethod
-    def update_position(instance, sender):
-        def change_positions(new_position, old_position, objects_set):
-
-            if new_position == old_position:
-                return
-            elif new_position > old_position:
-                objects_range = objects_set.filter(position__range=(old_position, new_position)).all()
-                objects_range.exclude(id=instance.id)
-                objects_range.update(position=models.F('position')-1)
-
             else:
-                objects_range = objects_set.filter(position__range=(new_position, old_position)).all()
-                objects_range.exclude(id=instance.id)
-                objects_range.update(position = models.F('position')+1)
+                return False
 
-        def get_objects_with_the_same_parent(parent):
-            if parent:
-                objects_with_same_parent = sender.objects.filter(object_id=parent.id)
-            else:
-                objects_with_same_parent = sender.objects.all()
-            return objects_with_same_parent
-
-        #takes either 1 or 0
-        def set_position(is_object_added_to_model: int):
-            if instance.position is None or \
-                    instance.position > objects_with_same_parent.count()+is_object_added_to_model:
-                instance.position = objects_with_same_parent.count() + is_object_added_to_model
-            elif instance.position < 1 or objects_with_same_parent.count() == 0:
-                instance.position = 1
-
-        try:
-            old_object = sender.objects.get(id=instance.id)
-        except ObjectDoesNotExist:
-            objects_with_same_parent = get_objects_with_the_same_parent(instance.parent)
-            set_position(1)
-            change_positions(instance.position,
-                             objects_with_same_parent.count() + 1,
-                             objects_with_same_parent)
-            return
-        else:
-            objects_with_same_parent = get_objects_with_the_same_parent(old_object.parent)
-            set_position(0)
-
-            #Imitate moving to last position
-            if instance.parent != old_object.parent:
-                change_positions(new_position=objects_with_same_parent.count()+1,
-                                 old_position=old_object.position,
-                                 objects_set=objects_with_same_parent)
-                instance.position = instance.parent.child.count()+1
-
-            elif instance.position != old_object.position:
-                change_positions(new_position=instance.position,
-                                 old_position=old_object.position,
-                                 objects_set=objects_with_same_parent)
-
-
-    """
-        on restriction group change, check what was changed and match the restrictiong groups
-        of childs to the restriction group of parents
-    """
     def __update_m2m_restricted_grouos_on_parent_change(self):
+        def get_new_posts_common_groups(self_object):
+            return  set(self.new_posts_groups.all()).intersection(self.parent.new_posts_groups.all())
+
+        def get_view_resitrcions_common_groups(self_object):
+            return set(self.visibility_groups.all()).intersection(self.parent.visibility_groups.all())
 
         try:
             self_object = self.__class__.objects.get(id=self.id)
@@ -199,52 +138,138 @@ class BaseBoardClass(models.Model):
             return
 
         if self.parent != self_object.parent:
-            can_add_common = set(self.new_posts_groups.all())\
-                .intersection(self.parent.new_posts_groups.all())
 
-            can_view_common = set(self.visibility_groups.all())\
-                .intersection(self.parent.visibility_groups.all())
-
+            can_add_common =get_new_posts_common_groups(self_object)
             self.new_posts_groups.set(can_add_common)
+
+            can_view_common = get_view_resitrcions_common_groups(self_object)
             self.visibility_groups.set(can_view_common)
 
+    def fix_positions(self):
+        children = self.child.all().order_by('position')
 
-    """to be used in signal, updates all the child restrictions groups of objects childs"""
+        for x, child in enumerate(children):
+            if child.position != x+1:
+                child.position = x+1
+                child.save(update_fields={"position"})
+
     @staticmethod
-    def update_restrictions_groups(pk_set, action, group, instance, child_related_name="child"):
+    def update_position(instance, sender):
+        def change_positions(new_position, old_position, siblings_list):
 
-        if action == "post_remove":
-            if getattr(instance, group).all().exists():
+            if new_position == old_position:
+                return
+            elif new_position > old_position:
+                objects_range = siblings_list.filter(position__range=(old_position, new_position)).all()
+                objects_range.exclude(id=instance.id)
+                objects_range.update(position=models.F('position')-1)
 
+            else:
+                objects_range = siblings_list.filter(position__range=(new_position, old_position)).all()
+                objects_range.exclude(id=instance.id)
+                objects_range.update(position = models.F('position')+1)
+
+        def get_objects_siblings(pre_save_object):
                 try:
-                    child_manager = getattr(instance, "{child}".format(child=child_related_name))
-                except (ObjectDoesNotExist):
-                    return
+                    return pre_save_object.parent.child.all()
+                except AttributeError:
+                    return sender.objects.all()
 
-                for child in child_manager.all():
-                    getattr(child, group).remove(*pk_set)
+        def set_object_in_positions_not_exceding_minimum_or_maximum(siblings_list):
+            def set_object_position_as_first():
+                instance.position = 1
+            def set_object_position_as_last(count_of_objects):
+                if instance.id is None:
+                    instance.position = count_of_objects + 1
+                else:
+                    instance.position = count_of_objects
+            siblings_count = len(siblings_list)
 
-        elif action == "pre_add":
-            if not getattr(instance, group).all().exists():
+            if instance.position is None:
+                set_object_position_as_last(siblings_count)
+            elif instance.position > siblings_count + 1:
+                set_object_position_as_last(siblings_count)
+            elif instance.position < 1:
+                set_object_position_as_first()
 
-                try:
-                    child_manager = getattr(instance, "{child}".format(child=child_related_name))
-                except (ObjectDoesNotExist):
-                    return
+        def get_pre_saved_object():
+            try:
+                return sender.objects.get(id=instance.id)
+            except:
+                return None
+
+        def is_this_a_new_object(pre_save_object):
+            return not pre_save_object == instance
+
+        def has_parent_changed(pre_save_object):
+            return instance.parent != pre_save_object.parent
+
+        def has_position_changed(pre_save_object):
+            return instance.position != pre_save_object.position
+
+        pre_save_object = get_pre_saved_object()
+        objects_siblings_list = get_objects_siblings(pre_save_object)
+        set_object_in_positions_not_exceding_minimum_or_maximum(objects_siblings_list)
+
+        if is_this_a_new_object(pre_save_object):
+            change_positions(new_position=instance.position,
+                             old_position=len(objects_siblings_list) + 1,
+                             siblings_list=objects_siblings_list)
+
+        elif has_parent_changed(pre_save_object):
+            # change position of old siblings to fill the gap after object move
+            change_positions(new_position=len(objects_siblings_list),
+                             old_position=pre_save_object.position,
+                             siblings_list=objects_siblings_list)
+
+            # set position to last with new siblings
+            instance.position = len(instance.parent.child.all()) + 1
+
+        elif has_position_changed(pre_save_object):
+            change_positions(new_position=instance.position,
+                             old_position=pre_save_object.position,
+                             siblings_list=objects_siblings_list)
 
 
-                for child in child_manager.all():
-                    settunio = set(getattr(child, group).values_list('pk', flat=True)) & set(pk_set)
-                    getattr(child, group).set(settunio)
+    def remove_removed_restrictions_groups_from_instance_childs(self, pk_set, group_name, child_related_name="child"):
+        if getattr(self, group_name).all().exists():
+            try:
+                child_manager = getattr(self, "{child}".format(child=child_related_name))
+            except (ObjectDoesNotExist):
+                return
 
-    def can_user_add_new_topics(self, user):
-        return self.is_user_restricted(user=user, act="topic")
+            for child in child_manager.all():
+                getattr(child, group_name).remove(*pk_set)
 
-    def can_user_view_it(self, user):
-        return self.is_user_restricted(user=user, act="visibility")
+    def set_children_groups_to_match_its_parents(self, pk_set, group_name, child_related_name="child"):
+        try:
+            child_manager = getattr(self, "{child}".format(child=child_related_name))
+        except (ObjectDoesNotExist):
+            return
 
-    def can_user_add_new_posts(self, user):
-        return self.is_user_restricted(user=user, act="post")
+        for child in child_manager.all():
+            settunio = set(getattr(child, group_name).values_list('pk', flat=True)) & set(pk_set)
+            getattr(child, group_name).set(settunio)
+
+    def fix_the_children_groups_to_not_have_anything_extra(self, group_name):
+        if self.parent:
+            parent_group = getattr(self.parent, group_name)
+            self_group = getattr(self, group_name)
+            common_groups = set(self_group.all()).intersection(set(parent_group.all()))
+            if common_groups == set():
+                self_group.set([])
+            else:
+                self_group.set(common_groups)
+
+    def check_does_child_have_any_restriction_group_that_is_not_in_parent(self, group_name):
+        if self.parent:
+            parent_group = getattr(self.parent, group_name).all()
+            self_group = getattr(self, group_name).all()
+            return not all(item in parent_group for item in self_group)
+        else:
+            return False
+
+
 
 
 class Board(BaseBoardClass):
