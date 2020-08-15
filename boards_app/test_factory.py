@@ -1,9 +1,17 @@
-from django.db.models import Manager
-
+from enum import Enum
 import factory
 
-
 from . import models
+
+RestrictionChoices = {
+    "ALL": 5,
+    "REGISTERED": 4,
+    "SELECTED": 3,
+    "ADMINS": 2,
+    "SUPERUSERS": 1,
+    "NONE": 0,
+}
+
 
 #todo test is not working afte generic relationship change
 
@@ -35,6 +43,7 @@ class BoardsGroupsFactory(factory.DjangoModelFactory):
         model = models.BoardGroup
     name = factory.Faker("name")
     child = factory.RelatedFactoryList(factory=BoardsFactoryWithSubBoard, factory_related_name="parent", size=4)
+    visibility = RestrictionChoices['REGISTERED']
 
     @factory.post_generation
     def fix_positions(self, create, extracted):

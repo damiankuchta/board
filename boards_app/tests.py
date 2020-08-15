@@ -1,7 +1,8 @@
-from django.test import testcases
+from django.test import testcases, Client
 from django.contrib.auth.models import Group
+from django.shortcuts import reverse
 
-from userprofiles_app.factory import GroupsFactory
+from userprofiles_app.factory import GroupsFactory, UserFactory
 from .test_factory import BoardsGroupsFactory,BoardsGroupsFactoryBoardsPositionSetToNone
 
 from . import models
@@ -21,9 +22,8 @@ class TestBoard(testcases.TestCase):
         self.board_group = models.BoardGroup.objects.get(id=1)
         self.groups = Group.objects.all()
 
-        self.board_group.new_topics_groups.set(self.groups)
-        self.board_group.new_posts_groups.set(self.groups)
-        self.board_group.visibility_groups.set(self.groups)
+        for restriction_group in self.RESTRICTION_GROUPS:
+            getattr(self.board_group, restriction_group).set(self.groups)
 
         for child in self.board_group.child.all():
             child.new_posts_groups.set(self.groups)
@@ -239,4 +239,34 @@ class TestBoard(testcases.TestCase):
         for x, child in enumerate(board_group_two.child.order_by("position")):
             self.assertEqual(positions_list[x], child.position)
 
+class TestBoardGroupView(testcases.TestCase):
+    def setUp(self):
 
+        GroupsFactory.create_batch(4)
+        self.board_group = BoardsGroupsFactory.create_batch(2)
+        self.client = Client()
+
+
+        self.groups = Group.objects.all()
+
+        self.user = UserFactory(is_active=True)
+        self.RESTRICTION_GROUPS = ["visibility_groups", "new_topics_groups", "new_posts_groups"]
+
+        for restriction_group in self.RESTRICTION_GROUPS:
+            getattr(self.board_group[0], restriction_group).set(self.groups)
+
+
+    def test_is_view_context_contains_that_board_groups_that_dont_have_permission(self):
+        self.groups[0].user_set.add(self.user)
+        self.groups[0].save()
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("board_group", kwargs={'board_group_id': self.board_group[0].id}), follow=True)
+
+        print(response.context['user'])
+        board_groups = response.context['board_groups']
+        self.assertTrue(self.board_group[0] in board_groups)
+        self.assertFalse(self.board_group[1] in board_groups)
+
+
+    # manage.py test boards_app.tests.TestBoardGroupView --settings=boards_project.settings.test

@@ -7,12 +7,26 @@ from . import models
 class BoardsGroup(TemplateView):
     template_name = "boards_app/boards_groups.html"
 
+    def _get_board_groups_that_user_can_view(self):
+        def get_board_groups():
+            if 'board_group_id' in self.kwargs:
+                return get_list_or_404(models.BoardGroup, id=self.kwargs['board_group_id'])
+            else:
+                return models.BoardGroup.objects.all()
+
+        def get_user_can_view_board_groups(board_groups):
+            user_can_view_board_groups = []
+            for board_group in board_groups:
+                if board_group.can_user_view_it(self.request.user):
+                    user_can_view_board_groups.append(board_group)
+            return user_can_view_board_groups
+
+        board_groups = get_board_groups()
+        return get_user_can_view_board_groups(board_groups)
+
     def get_context_data(self, **kwargs):
         context = super(BoardsGroup, self).get_context_data()
-        if 'board_group_id' in self.kwargs:
-            context['board_groups'] = get_list_or_404(models.BoardGroup, id=self.kwargs['board_group_id'])
-        else:
-            context['board_groups'] = models.BoardGroup.objects.all()
+        context['board_groups'] = self._get_board_groups_that_user_can_view()
         return context
 
 
