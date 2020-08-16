@@ -38,8 +38,6 @@ class TopicTest(TestCase):
         self.assertEqual(3, amount)
 
 
-
-
 class NewTopicView(TestCase):
     def setUp(self) -> None:
         self.client = Client()
@@ -69,6 +67,9 @@ class NewTopicView(TestCase):
         self.client.post(reverse("add_new_topic", kwargs={"board_id": self.board.id}), data=data)
         self.assertTrue(models.Topic.objects.all())
         self.assertTrue(models.Post.objects.all())
+
+    def can_banned_user_add_topics(self):
+        self.assertTrue(False)
 
 
 class NewPostView(TestCase):
@@ -124,3 +125,4 @@ class NewPostView(TestCase):
             self.assertTrue(True)
         else:
             self.assertTrue(False)
+

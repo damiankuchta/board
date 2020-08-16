@@ -49,7 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'reports_warrnings_bans_app.middleware.is_user_banned.IsUserBanned',
+
 ]
 
 ROOT_URLCONF = 'boards_project.urls'

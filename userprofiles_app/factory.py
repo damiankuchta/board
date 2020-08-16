@@ -17,5 +17,6 @@ class UserFactory(factory.DjangoModelFactory):
 
     username = factory.sequence(lambda x: 'test_user{user}'.format(user=x))
     password = factory.PostGenerationMethodCall("set_password", "TestPassword")
-    email = "damkuch@gmail.com"
+    email = factory.Faker("email")
     is_active = False
+

@@ -49,11 +49,7 @@ class SignUpTest(TestCase):
 
 class LoginTest(TestCase):
     def setUp(self) -> None:
-        self.data = {"username": "test_user0", "password": "TestPassword"}
-
-    def test_is_test_data_valid(self):
-        user_profile_activated = factory.UserFactory(is_active=True)
-        self.assertTrue(authforms.AuthenticationForm(data=self.data).is_valid())
+        self.data = {"username": "test_user0", "password": "TestPassword", "email": "test@gmial.com"}
 
     def test_response(self):
         response = self.client.get(reverse("login"))
@@ -81,11 +77,7 @@ class LoginTest(TestCase):
         self.assertTrue(response.context["user"].is_authenticated)
         self.assertRedirects(response, reverse(settings.LOGIN_REDIRECT_URL))
 
-    # def test_login_banned_user(self):
-    #     self.assertTrue(False)
 
-
-#todo: test reset
 class ResetPasswordTest(TestCase):
     def setUp(self) -> None:
         pass

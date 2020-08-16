@@ -442,6 +442,8 @@ class TestBoardsView(testcases.TestCase):
             getattr(self.board, restriction_group).set(self.groups)
 
     def test_can_user_view_board_that_is_not_allowed(self):
+        self.board.visibility = models.BaseBoardClass.RestrictionChoices['NONE']
+        self.board.save()
         response = self.client.get(reverse("board", kwargs={'board_id': self.board.id}),
                                   follow=True)
         self.assertRedirects(response, reverse("index"))
