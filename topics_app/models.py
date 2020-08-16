@@ -9,10 +9,11 @@ from hitcount.models import HitCount, HitCountMixin
 from boards_app.models import Board
 from userprofiles_app.models import User
 
-#todo test it
-#custom exception for 'get_page_numbers_to_display'
+
+# custom exception for 'get_page_numbers_to_display'
 class MustBeOddNumber(Exception):
     pass
+
 
 class BaseTopicClass(models.Model):
     class Meta:
@@ -24,8 +25,6 @@ class BaseTopicClass(models.Model):
     times_edited = models.SmallIntegerField(null=True)
 
 
-
-# Create your models here.
 class Topic(BaseTopicClass, HitCountMixin):
     class Meta:
         ordering = ['last_post_datetime']
@@ -37,7 +36,6 @@ class Topic(BaseTopicClass, HitCountMixin):
     hit_count_generic = GenericRelation(HitCount, related_query_name="hit_count_generic_relation",
                                object_id_field="object_pk")
 
-    # todo set null
     board = models.ForeignKey(Board,
                               on_delete=models.SET_NULL,
                               related_name="topics",
@@ -48,9 +46,6 @@ class Topic(BaseTopicClass, HitCountMixin):
 
     def __str__(self):
         return self.title
-
-
-# ------------------------------------------------------------------------------
 
     def get_posts(self):
         return self.post_set.all()
@@ -65,9 +60,6 @@ class Topic(BaseTopicClass, HitCountMixin):
         except InvalidPage:
             return paginator.page(paginator.num_pages)
 
-
-# ------------------------------------------------------------------------------
-
     def is_topic_closed(self):
         return self.is_closed
 
@@ -77,20 +69,15 @@ class Topic(BaseTopicClass, HitCountMixin):
     def open_topic(self):
         self.is_closed = False
 
-
-# ------------------------------------------------------------------------------
-
     def get_last_created_post(self):
         return self.post_set.latest("creation_datetime")
 
-    # todo test it
     def get_last_posted_user(self):
         try:
             return self.get_last_created_post().user
         except AttributeError:
             return self.user
 
-    # todo test it
     def get_last_post_datetime(self):
         try:
             last_post_datetime =  self.get_last_created_post().creation_datetime
@@ -98,7 +85,6 @@ class Topic(BaseTopicClass, HitCountMixin):
             last_post_datetime = self.creation_datetime
         return last_post_datetime.strftime('%d/%m/%y %H:%M')
 
-    # todo test it
     def get_amount_of_posts(self):
         return self.post_set.count()-1
 
@@ -113,10 +99,8 @@ class Topic(BaseTopicClass, HitCountMixin):
         if self.is_topic_closed():
             return False
         else:
-            if self.board.is_user_restricted(user, "post"):
-                return False
-            else:
-                return True
+            return self.board.can_user_add_new_posts(user)
+
 
 # ------------------------------------------------------------------------------
 
@@ -125,7 +109,7 @@ class Post(BaseTopicClass):
     class Meta:
         ordering = ['creation_datetime']
 
-    topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True)
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, null=True)
     content = models.TextField()
     can_be_deleted = models.BooleanField(default=True)
     is_topic_post = models.BooleanField(default=False)
@@ -133,13 +117,8 @@ class Post(BaseTopicClass):
     def delete(self, using=None, keep_parents=False):
         if self.is_topic_post:
             self.topic.delete()
-        super(Post, self).delete(using, keep_parents)
-
-    def do_not_let_to_delete(self):
-        self.can_be_deleted = False
-
-    def allow_to_delete(self):
-        self.can_be_deleted = True
+        if self.can_be_deleted:
+            super(Post, self).delete(using, keep_parents)
 
     def get_absolute_url(self):
         return self.topic.get_absolute_url()

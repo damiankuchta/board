@@ -1,8 +1,7 @@
 {% load can_user_view_it %}
 
 
-{% can_user_view_it user parent as result %}
-{% if result %}
+
     <div class="card m-2">
         <div class="card-header px-2 py-0">
             <a class="d-inline" href={{parent.get_absolute_url}}>{{ parent.name }}</a>
@@ -13,46 +12,38 @@
             </span>
         </div>
     {% for board in parent.child.all %}
-        {% can_user_view_it user board as result %}
-        {% if result %}
-
-            <div class="bg-light border p-2">
-                                        <span style="font-size: 18px">
-                                            <a class="font-weight-bold" href={{ board.get_absolute_url }}>{{ board.name }}</a>
-                                            <span>
-                                                {% if  board.description %}
-                                                    <span style="font-size: 16px">
-                                                        <br> {{ board.description }}
-                                                    </span>
-                                                {% endif %}
-                                                {% if board.child.all %}
-                                                    <span style="font-size: 14px">
-                                                        <br> SubForums:
-                                                        {% for subboard in board.child.all %}
-                                                            {% can_user_view_it user subboard as result %}
-                                                            {% if result %}
-                                                                <a href="{{ subboard.get_absolute_url }}">{{ subboard.name }}</a>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    </span>
-                                                {% endif %}
-                                            </span>
+        <div class="bg-light border p-2">
+                                    <span style="font-size: 18px">
+                                        <a class="font-weight-bold" href={{ board.get_absolute_url }}>{{ board.name }}</a>
+                                        <span>
+                                            {% if  board.description %}
+                                                <span style="font-size: 16px">
+                                                    <br> {{ board.description }}
+                                                </span>
+                                            {% endif %}
+                                            {% if board.child.all %}
+                                                <span style="font-size: 14px">
+                                                    <br> SubForums:
+                                                    {% for subboard in board.child.all %}
+                                                        {% can_user_view_it user subboard as result %}
+                                                        {% if result %}
+                                                            <a href="{{ subboard.get_absolute_url }}">{{ subboard.name }}</a>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </span>
+                                            {% endif %}
                                         </span>
+                                    </span>
 
 
-                <span class="float-right d-flex">
-                    <span class="px-5 mx-3">{{ board.get_topic_count }}</span>
-                    <span class="px-5 mx-3">{{ board.get_post_count }}</span>
-                    <span>
-        {#                                     todo fix this, visual positioning #}
-        {#                                     todo make link to the profile #}
-        {#                                     todo make link to the topic #}
-                        <div class="px-5 mx-3">{{ board.get_last_posted_topic }}</div>
-                        <div class="px-5 mx-3">{{ board.get_last_posted_user }}</div>
-                    </span>
+            <span class="float-right d-flex">
+                <span class="px-5 mx-3">{{ board.get_topic_count }}</span>
+                <span class="px-5 mx-3">{{ board.get_post_count }}</span>
+                <span>
+                    <div class="px-5 mx-3">{{ board.get_last_posted_topic }}</div>
+                    <div class="px-5 mx-3">{{ board.get_last_posted_user }}</div>
                 </span>
-            </div>
-        {% endif %}
+            </span>
+        </div>
     {% endfor %}
     </div>
-{% endif %}

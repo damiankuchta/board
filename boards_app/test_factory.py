@@ -7,7 +7,10 @@ from . import models
 class BaseBoardsFactory(factory.DjangoModelFactory):
     class Meta:
         abstract = True
-    visibility = models.BaseBoardClass.RestrictionChoices['SELECTED']
+    visibility = models.BaseBoardClass.RestrictionChoices['ALL']
+    add_new_topics_restrictions = models.BaseBoardClass.RestrictionChoices['ALL']
+    add_new_posts_restictions = models.BaseBoardClass.RestrictionChoices['ALL']
+
     name = factory.Faker("name")
 
     @factory.post_generation

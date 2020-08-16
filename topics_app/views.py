@@ -19,7 +19,7 @@ class Topic(CreateView, HitCountMixin):
 
     def get_success_url(self, **kwargs):
         topic = self.get_context_data()['topic']
-        return reverse('topic', args={"page": topic.get_pagnatinated_posts.num_pages}, kwargs={"topic_id": kwargs.get('topic_id')})
+        return reverse('topic', kwargs={"topic_id": topic.id})+"?page={}".format(topic.get_pagnatinated_posts().num_pages)
 
 
     def get_context_data(self, **kwargs):
@@ -39,11 +39,9 @@ class Topic(CreateView, HitCountMixin):
         obj.user = self.request.user
         topic = models.Topic.objects.get(id=self.kwargs['topic_id'])
         if not topic.can_user_add_new_posts(self.request.user):
-            self.form_invalid()
+            return self.form_invalid(form)
         obj.topic = topic
         return super(self.__class__, self).form_valid(form)
-
-
 
     def form_invalid(self, form):
         return HttpResponse("No Authorization to add the post")
@@ -52,22 +50,20 @@ class NewTopic(FormView):
     template_name = "topics_app/new_topic.html"
     form_class = forms.CreateTopicForm
 
-
     def get_form_kwargs(self):
         kwargs = super(NewTopic, self).get_form_kwargs()
         kwargs.update({'user': self.request.user,
                        'board': models.Board.objects.get(id=self.kwargs["board_id"])})
-        print(kwargs)
         return kwargs
 
-
     def form_valid(self, form):
+
         board = board_models.Board.objects.get(id=self.kwargs['board_id'])
         if board.can_user_add_new_topics(self.request.user):
             topic = form.save()
             self.success_url = reverse("topic", kwargs={"topic_id": topic.id})
             return super(self.__class__, self).form_valid(form)
-        return False
+        return self.form_invalid(form)
 
     def form_invalid(self, form):
         return HttpResponse("No Authorization to add the post")
