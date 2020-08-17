@@ -137,6 +137,7 @@ EMAIL_HOST= 'smtp.gmail.com'
 EMAIL_HOST_USER=  "boards.app.dk@gmail.com"
 
 AUTH_USER_MODEL = 'userprofiles_app.User'
+PROJECT_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 STATICFILES_DIRS = (
     os.path.join(PROJECT_ROOT, 'static'),
