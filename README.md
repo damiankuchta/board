@@ -1,5 +1,5 @@
-superuser: damku
-password: haselko134
+-superuser: damku
+-password: haselko134
 https://boards-discussion-forum.herokuapp.com/
 
 This is project i was trying to create universal discussion forum, with some base admin functionality 
